@@ -4,7 +4,7 @@
   NW_register({
     id: 'FAKE_OS_UI', name: 'Fake System UI Overlay',
     description: 'Page renders fake Windows dialog boxes, browser alerts, or OS notification overlays in HTML/CSS',
-    defaultScore: 28, tags: ['social-engineering','tech-support-scam'],
+    defaultScore: 10, tags: ['social-engineering','tech-support-scam'],
     detect(ctx) {
       const signals = [];
 

@@ -260,7 +260,7 @@
     reportToBackground(allFindings, totalScore, totalScore >= BLOCK_THRESHOLD);
 
     // Auto-report only at score >= 100 (high confidence threats only)
-    if (autoReport && !autoReported && totalScore >= 100) {
+    if (autoReport && !autoReported && totalScore >= 110) {
       autoReported = true;
       chrome.runtime.sendMessage({ type: 'NW_COMMUNITY_REPORT', url: window.location.href, findings: allFindings, score: totalScore, meta: collectMeta() }).catch(() => {});
     }

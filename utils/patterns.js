@@ -191,6 +191,10 @@ var NW_PATTERNS = NW_PATTERNS || {
     /(?:check|click|tick)\s+(?:the\s+)?box\s+to\s+confirm\s+(?:that\s+)?you(?:'re|\s+are)\s+human/i,
     /press\s+(?:&\s+)?hold\s+(?:the\s+)?windows\s+key/i,
     /in\s+the\s+(?:run|verification)\s+(?:box|dialog|window)/i,
+    /\w+\.com\s+needs\s+to\s+review\s+the\s+security/i,
+    /platform\s+performance\s+and\s+security\b/i,
+    /perform\s+the\s+steps\s+above\s+to\s+finish\s+verification/i,
+    /you\s+will\s+observe\s+and\s+agree/i,
   ],
 
   // ── Cloudflare typosquats ─────────────────────────────────
@@ -503,7 +507,7 @@ var NW_PATTERNS = NW_PATTERNS || {
     'scmp.com','screencastify.com','scribd.com','seamless.com','search.brave.com','search.google.com',
     'sec.gov','securelist.com','seekingalpha.com','semanticscholar.org','semrush.com','senate.gov',
     'sendgrid.com','sentry.io','sephora.com','service-public.fr','setlist.fm','shazam.com',
-    'shein.com','shopee.com','shopify.com','shutterstock.com','signal.org','signin.aws.amazon.com',
+    'sharepoint.com','shein.com','shopee.com','shopify.com','shutterstock.com','signal.org','signin.aws.amazon.com',
     'similarweb.com','simkl.com','singaporeair.com','sitejabber.com','sketch.com','sky.com',
     'skype.com','skyscanner.com','slack.com','slickdeals.net','slideshare.net','smallpdf.com',
     'smartsheet.com','smh.com.au','snapchat.com','snapdeal.com','social.msdn.microsoft.com','sogou.com',

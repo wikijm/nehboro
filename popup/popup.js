@@ -433,7 +433,7 @@
         { id:'DATA_THEFT_SCARE', name:'Data Theft Scare Tactic', description:'Claims personal data is being stolen', defaultScore:25, tags:['social-engineering','tech-support-scam'] },
         { id:'DIALOG_SPAM', name:'Alert Dialog Spam', description:'Alert/confirm dialog loops to trap users', defaultScore:25, tags:['social-engineering','tech-support-scam'] },
         { id:'SCAM_PHONE_PROMINENT', name:'Prominent Scam Phone Number', description:'Phone number repeated, toll-free, or styled as CTA', defaultScore:20, tags:['social-engineering','tech-support-scam'] },
-        { id:'FAKE_OS_UI', name:'Fake System UI Overlay', description:'Fake Windows dialogs or OS notifications in HTML', defaultScore:28, tags:['social-engineering','tech-support-scam'] },
+        { id:'FAKE_OS_UI', name:'Fake System UI Overlay', description:'Fake Windows dialogs or OS notifications in HTML', defaultScore:10, tags:['social-engineering','tech-support-scam'] },
         { id:'FAKE_URL_BAR', name:'Fake URL Bar / BitB Attack', description:'Fake browser URL bar as image (Browser-in-Browser)', defaultScore:40, tags:['phishing','social-engineering','critical'] },
         { id:'IP_GEOLOCATION_SCARE', name:'IP/Location Scare Display', description:'Shows user IP/location/ISP to intimidate', defaultScore:22, tags:['social-engineering','tech-support-scam'] },
         { id:'SCAM_MULTILANG', name:'Multilingual Scam Patterns', description:'Tech support scam in French/Spanish/German/Italian', defaultScore:30, tags:['social-engineering','tech-support-scam'] },
