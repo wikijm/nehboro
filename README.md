@@ -34,7 +34,7 @@ It runs **three detection engines** simultaneously:
 | **Dynamic Heuristic** | Runs 97 pattern-matching detections on every page after load. Catches brand-new threats not in any feed. | ~50ms |
 | **Claude AI** *(optional)* | Sends page metadata to Anthropic Claude for a second opinion on ambiguous pages. Requires your own API key. | ~2s |
 
-The heuristic engine is the heart of Nehboro. It doesn't need signatures, feeds, or cloud lookups — it reads the page like a human analyst would and scores what it sees.
+The heuristic engine is the heart of Nehboro. It doesn't need signatures, feeds, or cloud lookups - it reads the page like a human analyst would and scores what it sees.
 
 screenshots:
 
