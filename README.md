@@ -93,7 +93,7 @@ All thresholds are configurable in the Config tab.
 
 For the person in your life who should never see a "PowerShell" warning:
 
-**Silent Mode** raises the block threshold to 99 and removes all warning banners. Dangerous pages (score ≥ 99) are silently closed — no scary dialogs, no choices to make, no "are you sure?" The tab just disappears.
+**Silent Mode** raises the block threshold to 99 and removes all warning banners. Dangerous pages (score ≥ 99) are silently closed - no scary dialogs, no choices to make, no "are you sure?" The tab just disappears.
 
 Enable it in **Config → Silent Mode**.
 
