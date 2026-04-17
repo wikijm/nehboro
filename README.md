@@ -52,8 +52,9 @@ screenshots:
 
 ## Detections
 
+ 
 97 heuristic detections across 12 threat categories:
-
+ 
 | Category | Detections | Examples |
 |---|---|---|
 | **ClickFix** | `CLICKFIX_FULL_SEQUENCE` `CLICKFIX_PRETEXT` `CLICKFIX_MULTILANG` `FILEFIX` `DNS_CLICKFIX` `CONSENTFIX` | Win+R → Ctrl+V → Enter instruction chains, multilingual variants (FR/ES/DE/IT/PT) |
@@ -68,7 +69,7 @@ screenshots:
 | **Data theft** | `CARD_SKIMMER_ENHANCED` `FORMJACKING` `KEYLOGGER_PATTERN` `CREDENTIAL_EXFIL_FETCH` | Magecart-style skimmers, keyloggers, form data exfiltration |
 | **Obfuscation / evasion** | `OBFUSCATION` `OBFUSCATION_HEAVY` `EVAL_DYNAMIC` `STEGANOGRAPHY` `HIDDEN_CONTENT` `HEX_IP` | _0x variable mangling, eval(atob(...)), anti-debug traps, pixel-encoded payloads |
 | **Combo signals** | `BONUS_SCAM_FULLKIT` `BONUS_PS_CLIPBOARD` `BONUS_VISUAL_PHISH` `BONUS_LOLBIN_INSTRUCTION` `BONUS_CAPTCHA_INSTRUCTION` `BONUS_CRYPTO_LOOKALIKE` | Score multipliers when multiple threat signals appear on the same page |
-
+  
 Every detection returns **matched keywords** - the specific strings, commands, or patterns that triggered it, so you can see exactly what Nehboro found.
 
 ---
