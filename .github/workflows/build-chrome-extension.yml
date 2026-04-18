@@ -33,14 +33,27 @@ jobs:
 
       - name: Package Extension
         run: |
-          npx web-ext build --source-dir . --artifacts-dir ./dist --overwrite-dest
-          # Rename the artifact for clarity if needed, though web-ext uses version from manifest
+          npx web-ext build --source-dir . --artifacts-dir ./dist --overwrite-dest --ignore-files "lint-results.json" "README.md" --filename nehboro.zip
+          
+      - name: Create CRX
+        run: |
+          # Use secret if available, otherwise generate a temporary key
+          if [ -z "${{ secrets.CHROME_EXTENSION_PEM }}" ]; then
+            echo "WARNING: CHROME_EXTENSION_PEM secret not found. Generating a temporary key."
+            npx crx keygen .
+            mv key.pem ./dist/key.pem
+          else
+            echo "${{ secrets.CHROME_EXTENSION_PEM }}" > ./dist/key.pem
+          fi
+          # Unzip to a temporary directory to pack into CRX
+          unzip ./dist/nehboro.zip -d ./crx-temp
+          npx crx pack ./crx-temp -p ./dist/key.pem -o ./dist/nehboro.crx
           
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
         with:
           name: nehboro-extension
-          path: ./dist/*.zip
+          path: ./dist/nehboro.*
 
       - name: Get version
         id: version
@@ -67,7 +80,7 @@ jobs:
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: Release ${{ steps.version.outputs.tag }}
-          files: ./dist/*.zip
+          files: ./dist/*.crx
           generate_release_notes: true
           draft: false
           prerelease: false
