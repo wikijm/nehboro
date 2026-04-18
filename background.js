@@ -42,6 +42,20 @@ const STORE = {
   WHITELIST:     'nehboro_whitelist',
   LAST_REFRESH:  'nehboro_last_refresh',
   THRESHOLDS:    'nehboro_thresholds',
+  LANG:          'nehboro_lang'
+};
+
+const BACKGROUND_I18N = {
+  en: {
+    report_menu: "🚩 Report page (Nehboro GitHub Issue)",
+    trust_menu:  "✅ Trust this domain (Nehboro)",
+    domain_trusted: "✅ {domain} trusted."
+  },
+  fr: {
+    report_menu: "🚩 Signaler la page (Nehboro GitHub Issue)",
+    trust_menu:  "✅ Faire confiance à ce domaine (Nehboro)",
+    domain_trusted: "✅ {domain} est désormais de confiance."
+  }
 };
 
 // ── Inline feed utilities (mirror of utils/feeds.js) ─────
@@ -181,21 +195,40 @@ function expandPort(entry) {
   return [];
 }
 
+async function initContextMenus() {
+  const { [STORE.LANG]: lang = 'en' } = await chrome.storage.local.get(STORE.LANG);
+  const t = BACKGROUND_I18N[lang] || BACKGROUND_I18N.en;
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({ id: 'nehboro_report', title: t.report_menu, contexts: ['page'] });
+    chrome.contextMenus.create({ id: 'nehboro_trust',  title: t.trust_menu,  contexts: ['page'] });
+  });
+}
+
 // ── Install / startup ─────────────────────────────────────
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === 'install') {
+    const sysLang = chrome.i18n.getUILanguage().split('-')[0];
+    const defaultLang = BACKGROUND_I18N[sysLang] ? sysLang : 'en';
     await chrome.storage.local.set({
       [STORE.CUSTOM_FEEDS]: [],
       [STORE.STATS]:         { blocked: 0, warned: 0, reported: 0 },
       [STORE.WHITELIST]:     [],
+      [STORE.LANG]:          defaultLang
     });
     await refreshAllFeeds();
   }
   await chrome.alarms.create('nehboro_refresh', { periodInMinutes: FEED_REFRESH_MINUTES });
-  chrome.contextMenus.removeAll(() => {
-    chrome.contextMenus.create({ id: 'nehboro_report', title: '🚩 Report page (Nehboro GitHub Issue)', contexts: ['page'] });
-    chrome.contextMenus.create({ id: 'nehboro_trust',  title: '✅ Trust this domain (Nehboro)',        contexts: ['page'] });
-  });
+  await initContextMenus();
+});
+
+chrome.runtime.onStartup.addListener(async () => {
+  await initContextMenus();
+});
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes[STORE.LANG]) {
+    initContextMenus();
+  }
 });
 
 chrome.alarms.onAlarm.addListener(async ({ name }) => {
@@ -993,12 +1026,20 @@ chrome.contextMenus.onClicked.addListener(async ({ menuItemId }, tab) => {
       message: result.ok ? '✅ Report sent successfully.' : '⚠️ Report queued (offline).',
     });
   }
-  if (menuItemId === 'nehboro_trust') {
-    let h; try { h = new URL(tab.url).hostname; } catch { return; }
-    const { [STORE.WHITELIST]: wl=[] } = await chrome.storage.local.get(STORE.WHITELIST);
+  if (cmd === 'nehboro_trust') {
+    const h = hostname;
+    const { [STORE.WHITELIST]: wl = [] } = await chrome.storage.local.get(STORE.WHITELIST);
     if (!wl.includes(h)) wl.push(h);
     await chrome.storage.local.set({ [STORE.WHITELIST]: wl });
-    chrome.notifications.create({ type:'basic', iconUrl:'icons/icon48.png', title:'Nehboro', message:`✅ ${h} trusted.` });
+    
+    const { [STORE.LANG]: lang = 'en' } = await chrome.storage.local.get(STORE.LANG);
+    const t = BACKGROUND_I18N[lang] || BACKGROUND_I18N.en;
+    chrome.notifications.create({ 
+      type: 'basic', 
+      iconUrl: 'icons/icon48.png', 
+      title: 'Nehboro', 
+      message: t.domain_trusted.replace('{domain}', h) 
+    });
   }
 });
 

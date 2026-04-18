@@ -156,18 +156,18 @@
 <body>
 <div class="card">
   <span class="shield">🛡️</span>
-  <h1>Threat Blocked</h1>
-  <p class="subtitle">Nehboro prevented you from accessing a dangerous page.</p>
+  <h1 data-i18n="threat_blocked">Threat Blocked</h1>
+  <p class="subtitle" data-i18n="prevented_access">Nehboro prevented you from accessing a dangerous page.</p>
 
-  <div class="url-label">Blocked URL</div>
-  <div class="url-box" id="blocked-url">Retrieving URL…</div>
+  <div class="url-label" data-i18n="blocked_url">Blocked URL</div>
+  <div class="url-box" id="blocked-url" data-i18n="retrieving_url">Retrieving URL…</div>
 
   <div class="info-row">
     <div class="score-ring">
       <div class="score-num" id="score-value">-</div>
-      <div class="score-label">Threat Score</div>
+      <div class="score-label" data-i18n="threat_score_label">Threat Score</div>
     </div>
-    <div class="info-desc" id="info-desc">
+    <div class="info-desc" id="info-desc" data-i18n="threat_description">
       This page exceeded the threat threshold, indicating a high likelihood of phishing, scam, or malware delivery.
     </div>
   </div>
@@ -175,46 +175,47 @@
   <div class="score-breakdown" id="score-breakdown" style="display:none;">
     <span class="score-bar-label" id="score-bar-text">0 pts</span>
     <div class="score-bar"><div class="score-fill" id="score-fill" style="width:0%;background:#e74c3c;"></div></div>
-    <span class="score-bar-label">Block: <span id="score-threshold">70</span></span>
+    <span class="score-bar-label"><span data-i18n="block_at">Block</span>: <span id="score-threshold">70</span></span>
   </div>
 
   <div id="detections-section" style="display:none;">
     <div class="detections-header" id="detections-header">
-      <span class="detections-title" id="detections-title">Detections (0)</span>
-      <button class="detections-toggle" id="detections-toggle">▼ Expand all</button>
+      <span class="detections-title" id="detections-title" data-i18n="detections">Detections (0)</span>
+      <button class="detections-toggle" id="detections-toggle" data-i18n="expand_all">▼ Expand all</button>
     </div>
     <div class="detections-list" id="detections-list"></div>
   </div>
 
   <div id="reasons-fallback" style="display:none; margin-bottom:20px; text-align:left;">
-    <div class="detections-title" style="margin-bottom:8px;">Detection categories</div>
+    <div class="detections-title" style="margin-bottom:8px;" data-i18n="detection_categories">Detection categories</div>
     <div id="reasons-list"></div>
   </div>
 
   <div class="actions">
     <button class="btn btn-back" id="btn-back">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M19 12H5"></path><polyline points="12 19 5 12 12 5"></polyline></svg>
-      Go Back
+      <span data-i18n="go_back">Go Back</span>
     </button>
     <button class="btn btn-report" id="btn-report">
-      <span class="btn-icon"><img src="../icons/report-flag.png" style="width:22px;height:22px;vertical-align:middle;"></span> Report Threat
+      <span class="btn-icon"><img src="../icons/report-flag.png" style="width:22px;height:22px;vertical-align:middle;"></span> <span data-i18n="report_threat">Report Threat</span>
     </button>
   </div>
   <div style="text-align:center;margin-top:14px;">
-    <button class="btn btn-proceed" id="btn-proceed">I understand the risk - let me proceed</button>
+    <button class="btn btn-proceed" id="btn-proceed" data-i18n="proceed_understand">I understand the risk - let me proceed</button>
   </div>
 
   <div class="proceed-warning" id="proceed-warning">
-    ⚠️ Proceeding exposes you to credential theft, malware, or scam.
-    This page was flagged by community threat intelligence and heuristic analysis.<br>
-    <button class="btn-proceed-confirm" id="btn-proceed-confirm">
+    ⚠️ <span data-i18n="proceed_warning">Proceeding exposes you to credential theft, malware, or scam.
+    This page was flagged by community threat intelligence and heuristic analysis.</span><br>
+    <button class="btn-proceed-confirm" id="btn-proceed-confirm" data-i18n="proceed_anyway">
       ⚠️ Proceed anyway (not recommended)
     </button>
   </div>
 
-  <div class="footer">Protected by <strong><img src="../icons/icon48.png" style="width:18px;height:18px;vertical-align:middle;margin-right:2px;">Nehboro</strong> Community Threat Intelligence</div>
+  <div class="footer"><span data-i18n="protected_by">Protected by</span> <strong><img src="../icons/icon48.png" style="width:18px;height:18px;vertical-align:middle;margin-right:2px;">Nehboro</strong> Community Threat Intelligence</div>
 </div>
 
+<script src="../utils/i18n.js"></script>
 <script src="blocked.js"></script>
 </body>
 </html>

@@ -1,9 +1,42 @@
-// ============================================================
-// Nehboro - popup/popup.js
-// ============================================================
-
 (async function () {
   'use strict';
+
+  // ── I18n initialization ─────────────────────────────────────
+  const storage = await chrome.storage.local.get('nehboro_lang');
+  const savedLang = storage.nehboro_lang || chrome.i18n.getUILanguage().split('-')[0];
+  NehboroI18n.init(savedLang);
+
+  function applyTranslations() {
+    const t = NehboroI18n.t;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const val = t(key);
+      if (val !== key) {
+        if (el.childNodes.length <= 1) {
+          el.textContent = val;
+        } else {
+          const textNode = [...el.childNodes].find(n => n.nodeType === 3);
+          if (textNode) textNode.textContent = val;
+        }
+      }
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      const val = t(key);
+      if (val !== key) el.placeholder = val;
+    });
+
+    const langSelect = document.getElementById('select-lang');
+    if (langSelect) langSelect.value = NehboroI18n.getLanguage();
+  }
+
+  applyTranslations();
+
+  document.getElementById('select-lang')?.addEventListener('change', async (e) => {
+    const newLang = e.target.value;
+    await chrome.storage.local.set({ nehboro_lang: newLang });
+    location.reload();
+  });
 
   // ── Tab navigation ──────────────────────────────────────
   document.querySelectorAll('.tab').forEach(tab => {
@@ -42,6 +75,7 @@
   async function loadStatus() {
     const { scan, whitelisted } = await msg('NW_GET_SCAN');
     const container = document.getElementById('status-content');
+    const t = NehboroI18n.t;
 
     if (whitelisted) {
       container.innerHTML = `
@@ -49,15 +83,15 @@
           <div class="status-row">
             <span class="status-icon">✅</span>
             <div>
-              <div class="status-label">Trusted Domain</div>
+              <div class="status-label">${t('trusted_domain')}</div>
               <div class="status-host">${esc(currentHostname)}</div>
             </div>
             <span class="badge-green">TRUSTED</span>
           </div>
         </div>
         <div class="engine-cards">
-          <div class="engine-card"><div class="engine-card-title"><span class="icon">⚡</span> IOC Engine</div><div class="engine-card-value safe">SKIP</div><div class="engine-card-sub">Domain whitelisted</div></div>
-          <div class="engine-card"><div class="engine-card-title"><span class="icon">🔬</span> Heuristic Engine</div><div class="engine-card-value safe">SKIP</div><div class="engine-card-sub">Domain whitelisted</div></div>
+          <div class="engine-card"><div class="engine-card-title"><span class="icon">⚡</span> ${t('ioc_engine')}</div><div class="engine-card-value safe">SKIP</div><div class="engine-card-sub">${t('trusted_domain')}</div></div>
+          <div class="engine-card"><div class="engine-card-title"><span class="icon">🔬</span> ${t('heuristic_engine')}</div><div class="engine-card-value safe">SKIP</div><div class="engine-card-sub">${t('trusted_domain')}</div></div>
         </div>`;
       return;
     }
@@ -68,15 +102,15 @@
           <div class="status-row">
             <span class="status-icon">✅</span>
             <div>
-              <div class="status-label">No Threats Detected</div>
+              <div class="status-label">${t('no_threats')}</div>
               <div class="status-host">${esc(currentHostname) || 'No page loaded'}</div>
             </div>
-            <span class="status-score safe">CLEAN</span>
+            <span class="status-score safe">${t('clean')}</span>
           </div>
         </div>
         <div class="engine-cards">
-          <div class="engine-card"><div class="engine-card-title"><span class="icon">⚡</span> IOC Engine</div><div class="engine-card-value safe">PASS</div><div class="engine-card-sub">No feed match</div></div>
-          <div class="engine-card"><div class="engine-card-title"><span class="icon">🔬</span> Heuristic Engine</div><div class="engine-card-value safe">PASS</div><div class="engine-card-sub">No detections</div></div>
+          <div class="engine-card"><div class="engine-card-title"><span class="icon">⚡</span> ${t('ioc_engine')}</div><div class="engine-card-value safe">${t('pass')}</div><div class="engine-card-sub">${t('no_feed_match')}</div></div>
+          <div class="engine-card"><div class="engine-card-title"><span class="icon">🔬</span> ${t('heuristic_engine')}</div><div class="engine-card-value safe">${t('pass')}</div><div class="engine-card-sub">${t('no_detections')}</div></div>
         </div>`;
       return;
     }
@@ -88,10 +122,9 @@
     const warnAt  = th.warn ?? 45;
     const sc       = score >= blockAt ? 'danger' : score >= warnAt ? 'warn' : 'safe';
     const icon     = score >= blockAt ? '🚨' : score >= warnAt ? '⚠️' : '✅';
-    const label    = score >= blockAt ? 'BLOCKED' : score >= warnAt ? 'WARNING' : 'Clean';
+    const label    = score >= blockAt ? t('blocked').toUpperCase() : score >= warnAt ? t('tab_settings').toUpperCase() : t('clean');
     const findings = scan.findings || [];
 
-    // Separate feed vs heuristic findings
     const feedFindings = findings.filter(f => f.category === 'FEED_MATCH');
     const heurFindings = findings.filter(f => f.category !== 'FEED_MATCH');
     const feedStatus   = feedFindings.length > 0 ? 'danger' : 'safe';
@@ -110,26 +143,26 @@
       </div>
       <div class="engine-cards">
         <div class="engine-card">
-          <div class="engine-card-title"><span class="icon">⚡</span> IOC Engine</div>
-          <div class="engine-card-value ${feedStatus}">${feedFindings.length > 0 ? 'HIT' : 'PASS'}</div>
-          <div class="engine-card-sub">${feedFindings.length > 0 ? feedFindings.length + ' feed match(es)' : 'No feed match'}</div>
+          <div class="engine-card-title"><span class="icon">⚡</span> ${t('ioc_engine')}</div>
+          <div class="engine-card-value ${feedStatus}">${feedFindings.length > 0 ? t('hit') : t('pass')}</div>
+          <div class="engine-card-sub">${feedFindings.length > 0 ? feedFindings.length + ' ' + t('no_feed_match') : t('no_feed_match')}</div>
         </div>
         <div class="engine-card">
-          <div class="engine-card-title"><span class="icon">🔬</span> Heuristic Engine</div>
-          <div class="engine-card-value ${heurStatus}">${heurFindings.length > 0 ? heurFindings.length + ' HIT' : 'PASS'}</div>
-          <div class="engine-card-sub">${heurFindings.length > 0 ? 'Score: ' + heurFindings.reduce((s,f)=>s+f.score,0) : 'No detections'}</div>
+          <div class="engine-card-title"><span class="icon">🔬</span> ${t('heuristic_engine')}</div>
+          <div class="engine-card-value ${heurStatus}">${heurFindings.length > 0 ? heurFindings.length + ' ' + t('hit') : t('pass')}</div>
+          <div class="engine-card-sub">${heurFindings.length > 0 ? t('threat_score') + ': ' + heurFindings.reduce((s,f)=>s+f.score,0) : t('no_detections')}</div>
         </div>
       </div>`;
 
     if (findings.length) {
-      html += `<div class="section-title">Detections (${findings.length}) <span class="line"></span></div>`;
+      html += `<div class="section-title">${t('detections_count')} (${findings.length}) <span class="line"></span></div>`;
       for (const f of [...findings].sort((a,b) => (b.score||0) - (a.score||0))) {
         const hi = f.score >= 30;
         const fid = 'f_' + Math.random().toString(36).slice(2, 9);
         const matches = Array.isArray(f.matches) ? f.matches : [];
         const matchesBlock = matches.length > 0
           ? `<div class="match-panel" id="${fid}_panel" style="display:none;">
-               <div class="match-panel-title">🔍 Suspicious Keywords <span class="match-count">${matches.length}</span></div>
+               <div class="match-panel-title">🔍 ${t('matched_content')} <span class="match-count">${matches.length}</span></div>
                <div class="match-items">
                  ${matches.slice(0, 40).map(m => `<div class="match-item">${esc(String(m).substring(0, 200))}</div>`).join('')}
                  ${matches.length > 40 ? `<div class="match-item match-more">+${matches.length - 40} more…</div>` : ''}
@@ -137,7 +170,7 @@
              </div>`
           : '';
         const toggleBtn = matches.length > 0
-          ? `<button class="match-toggle" data-target="${fid}_panel">Show ${matches.length} matched keyword${matches.length > 1 ? 's' : ''} ▾</button>`
+          ? `<button class="match-toggle" data-target="${fid}_panel">${t('show_all').replace('{count}', matches.length)} ${matches.length} ${t('matched_keywords')} ▾</button>`
           : '';
         html += `
           <div class="finding ${hi ? '' : 'warn'}">
@@ -151,14 +184,13 @@
       }
     }
 
-    // ── Extracted URLs panel ─────────────────────────────────
     const extractedUrls = Array.isArray(scan.meta?.extractedUrls) ? scan.meta.extractedUrls : [];
     if (extractedUrls.length > 0) {
-      html += `<div class="section-title">Extracted URLs (${extractedUrls.length}) <span class="line"></span></div>`;
+      html += `<div class="section-title">${t('extracted_urls')} (${extractedUrls.length}) <span class="line"></span></div>`;
       html += `<div class="urls-panel" id="urls_panel_wrap">
         <div class="urls-toolbar">
-          <input class="urls-filter" id="urls_filter" type="text" placeholder="Filter URLs..." />
-          <button class="urls-copy" id="urls_copy">Copy all</button>
+          <input class="urls-filter" id="urls_filter" type="text" placeholder="${t('filter_urls')}" />
+          <button class="urls-copy" id="urls_copy">${t('copy_all')}</button>
         </div>
         <div class="urls-list" id="urls_list">
           ${extractedUrls.slice(0, 100).map(u => `<div class="url-item" title="${esc(u)}">${esc(u)}</div>`).join('')}
@@ -169,7 +201,6 @@
 
     container.innerHTML = html;
 
-    // Wire up toggle buttons
     container.querySelectorAll('.match-toggle').forEach(btn => {
       btn.addEventListener('click', () => {
         const panel = container.querySelector('#' + btn.dataset.target);
@@ -180,7 +211,6 @@
       });
     });
 
-    // URL filter and copy
     const urlFilter = container.querySelector('#urls_filter');
     const urlsList  = container.querySelector('#urls_list');
     if (urlFilter && urlsList) {
@@ -195,8 +225,9 @@
     if (copyBtn) {
       copyBtn.addEventListener('click', () => {
         navigator.clipboard.writeText(extractedUrls.join('\n')).then(() => {
-          copyBtn.textContent = '✓ Copied';
-          setTimeout(() => { copyBtn.textContent = 'Copy all'; }, 1500);
+          const original = copyBtn.textContent;
+          copyBtn.textContent = '✓';
+          setTimeout(() => { copyBtn.textContent = original; }, 1500);
         });
       });
     }
@@ -206,8 +237,8 @@
   async function loadFeeds() {
     const { settings, defaultFeeds } = await msg('NW_GET_SETTINGS');
     const customFeeds = settings?.nehboro_custom_feeds || [];
+    const t = NehboroI18n.t;
 
-    // Default feeds from github.com/Nehboro/nehboro.github.io
     const defList = document.getElementById('default-feeds-list');
     if (defList && defaultFeeds) {
       defList.innerHTML = Object.entries(defaultFeeds).map(([type, url]) => `
@@ -220,11 +251,10 @@
         </div>`).join('');
     }
 
-    // Custom feeds
     const container = document.getElementById('custom-feeds-list');
     if (!container) return;
     if (customFeeds.length === 0) {
-      container.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:6px 0;">No custom feeds added.</div>';
+      container.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:6px 0;">${t('no_custom_feeds')}</div>`;
     } else {
       container.innerHTML = customFeeds.map((f, i) => `
         <div class="feed-item">
@@ -239,7 +269,7 @@
       container.querySelectorAll('.btn-remove').forEach(btn => {
         btn.addEventListener('click', async () => {
           await msg('NW_REMOVE_CUSTOM_FEED', { index: parseInt(btn.dataset.idx) });
-          showMsg('feed-status-msg', 'Feed removed and rules refreshed.');
+          showMsg('feed-status-msg', t('feed_removed'));
           loadFeeds(); loadStats();
         });
       });
@@ -247,35 +277,40 @@
   }
 
   document.getElementById('btn-add-feed')?.addEventListener('click', async () => {
+    const t = NehboroI18n.t;
     const name = document.getElementById('feed-name')?.value.trim();
     const url  = document.getElementById('feed-url')?.value.trim();
     const type = document.getElementById('feed-type')?.value;
-    if (!url) { showMsg('feed-status-msg', 'Please enter a URL.', 'var(--accent-red)'); return; }
-    try { new URL(url); } catch { showMsg('feed-status-msg', 'Invalid URL.', 'var(--accent-red)'); return; }
+    if (!url) { showMsg('feed-status-msg', t('please_enter_url'), 'var(--accent-red)'); return; }
+    try { new URL(url); } catch { showMsg('feed-status-msg', t('invalid_url'), 'var(--accent-red)'); return; }
     const btn = document.getElementById('btn-add-feed');
-    btn.disabled = true; btn.textContent = 'Adding...';
+    const originalText = btn.textContent;
+    btn.disabled = true; btn.textContent = t('adding');
     try {
       const r = await msg('NW_ADD_CUSTOM_FEED', { name, feedUrl: url, feedType: type });
-      showMsg('feed-status-msg', `Feed added! ${r.total} custom feed(s) active.`);
+      showMsg('feed-status-msg', t('feed_added').replace('{total}', r.total));
       document.getElementById('feed-name').value = '';
       document.getElementById('feed-url').value  = '';
       loadFeeds(); loadStats();
-    } catch { showMsg('feed-status-msg', 'Error adding feed.', 'var(--accent-red)'); }
-    finally { btn.disabled = false; btn.textContent = '+ Add Feed'; }
+    } catch { showMsg('feed-status-msg', t('error_adding_feed'), 'var(--accent-red)'); }
+    finally { btn.disabled = false; btn.textContent = originalText; }
   });
 
   document.getElementById('btn-refresh-feeds')?.addEventListener('click', async () => {
+    const t = NehboroI18n.t;
     const btn = document.getElementById('btn-refresh-feeds');
-    btn.disabled = true; btn.textContent = '⏳ Refreshing...';
+    const originalText = btn.textContent;
+    btn.disabled = true; btn.textContent = '⏳ ' + t('refreshing');
     await msg('NW_REFRESH_FEEDS');
-    showMsg('feed-status-msg', 'Feeds refreshed!');
-    btn.disabled = false; btn.textContent = '🔄 Refresh Now';
+    showMsg('feed-status-msg', t('feeds_refreshed'));
+    btn.disabled = false; btn.textContent = originalText;
     loadFeeds(); loadStats();
   });
 
   // ── STATS TAB ───────────────────────────────────────────
   async function loadStats() {
     const { stats, lastRefresh, iocCounts } = await msg('NW_GET_STATS');
+    const t = NehboroI18n.t;
     if (document.getElementById('stat-blocked')) document.getElementById('stat-blocked').textContent  = (stats?.blocked  || 0).toLocaleString();
     if (document.getElementById('stat-warned'))  document.getElementById('stat-warned').textContent   = (stats?.warned   || 0).toLocaleString();
     if (document.getElementById('stat-reported'))document.getElementById('stat-reported').textContent = (stats?.reported || 0).toLocaleString();
@@ -284,7 +319,6 @@
     const iocEl = document.getElementById('stat-iocs');
     if (iocEl) iocEl.textContent = total.toLocaleString();
 
-    // Update header IOC engine badge
     const iocBadge = document.getElementById('engine-ioc-count');
     if (iocBadge) iocBadge.textContent = total > 0 ? total.toLocaleString() : '-';
 
@@ -292,18 +326,19 @@
     if (coverageEl && iocCounts) {
       coverageEl.innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;">
-          <span>🌐 <strong>${(iocCounts.domains||0).toLocaleString()}</strong> domains</span>
-          <span>🔗 <strong>${(iocCounts.urls||0).toLocaleString()}</strong> URLs</span>
-          <span>🖥️ <strong>${(iocCounts.ips||0).toLocaleString()}</strong> IPs / CIDRs</span>
-          <span>🔌 <strong>${(iocCounts.ports||0).toLocaleString()}</strong> ports</span>
+          <span>🌐 <strong>${(iocCounts.domains||0).toLocaleString()}</strong> ${t('domains')}</span>
+          <span>🔗 <strong>${(iocCounts.urls||0).toLocaleString()}</strong> ${t('urls')}</span>
+          <span>🖥️ <strong>${(iocCounts.ips||0).toLocaleString()}</strong> ${t('ips')}</span>
+          <span>🔌 <strong>${(iocCounts.ports||0).toLocaleString()}</strong> ${t('ports')}</span>
         </div>
-        ${lastRefresh ? `<div style="color:var(--muted);font-size:10px;margin-top:6px;font-family:var(--mono);">Last refresh: ${new Date(lastRefresh).toLocaleString()}</div>` : ''}`;
+        ${lastRefresh ? `<div style="color:var(--muted);font-size:10px;margin-top:6px;font-family:var(--mono);">${t('last_refresh')}: ${new Date(lastRefresh).toLocaleString()}</div>` : ''}`;
     }
   }
 
   // ── SETTINGS TAB ────────────────────────────────────────
   async function loadSettings() {
     const { settings } = await msg('NW_GET_SETTINGS');
+    const t = NehboroI18n.t;
     const whitelist = settings?.nehboro_whitelist || [];
     const thresholds = settings?.nehboro_thresholds || {};
 
@@ -312,7 +347,6 @@
     document.getElementById('toggle-notifications').checked = thresholds.showBanners !== false;
     document.getElementById('toggle-auto-report').checked = thresholds.autoReport !== false;
 
-    // Silent mode
     const silentEl = document.getElementById('toggle-silent-mode');
     const silentStatus = document.getElementById('silent-mode-status');
     if (silentEl) {
@@ -324,24 +358,24 @@
     if (!container) return;
 
     container.innerHTML = whitelist.length === 0
-      ? '<div style="color:var(--muted);font-size:12px;">No trusted domains yet.</div>'
+      ? `<div style="color:var(--muted);font-size:12px;">${t('no_trusted_domains')}</div>`
       : whitelist.map(domain => `
           <div class="feed-item">
             <div class="feed-info"><div class="feed-name">${esc(domain)}</div></div>
-            <button class="btn-remove" data-domain="${esc(domain)}">Remove</button>
+            <button class="btn-remove" data-domain="${esc(domain)}">${t('remove')}</button>
           </div>`).join('');
 
     container.querySelectorAll('.btn-remove').forEach(btn => {
       btn.addEventListener('click', async () => {
         await msg('NW_REMOVE_WHITELIST', { domain: btn.dataset.domain });
-        showMsg('settings-msg', `${btn.dataset.domain} removed.`);
+        showMsg('settings-msg', `${btn.dataset.domain} ${t('remove')}.`);
         loadSettings();
       });
     });
   }
 
-  // Silent mode toggle - saves immediately
   document.getElementById('toggle-silent-mode')?.addEventListener('change', async (e) => {
+    const t = NehboroI18n.t;
     const silentMode = e.target.checked;
     const { settings } = await msg('NW_GET_SETTINGS');
     const thresholds = settings?.nehboro_thresholds || {};
@@ -352,25 +386,27 @@
     await msg('NW_SAVE_THRESHOLDS', { thresholds });
     const silentStatus = document.getElementById('silent-mode-status');
     if (silentStatus) silentStatus.style.display = silentMode ? 'block' : 'none';
-    showMsg('threshold-msg', silentMode ? 'Silent mode enabled.' : 'Silent mode disabled.');
+    showMsg('threshold-msg', silentMode ? t('silent_mode_on') : t('silent_mode_off'));
     loadSettings();
   });
 
   document.getElementById('btn-save-thresholds')?.addEventListener('click', async () => {
+    const t = NehboroI18n.t;
     const warn = parseInt(document.getElementById('threshold-warn').value) || 45;
     const block = parseInt(document.getElementById('threshold-block').value) || 79;
     const showBanners = document.getElementById('toggle-notifications').checked;
     const autoReport = document.getElementById('toggle-auto-report').checked;
     const silentMode = document.getElementById('toggle-silent-mode')?.checked || false;
-    if (warn >= block) { showMsg('threshold-msg', 'Warning must be lower than block.', 'var(--red)'); return; }
+    if (warn >= block) { showMsg('threshold-msg', t('warning_must_lower'), 'var(--red)'); return; }
     await msg('NW_SAVE_THRESHOLDS', { thresholds: { warn, block, showBanners, autoReport, silentMode } });
-    showMsg('threshold-msg', 'Settings saved.');
+    showMsg('threshold-msg', t('settings_saved'));
   });
 
   document.getElementById('btn-export-logs')?.addEventListener('click', async () => {
+    const t = NehboroI18n.t;
     const result = await msg('NW_EXPORT_SCAN_HISTORY');
     if (!result?.data || result.data.length === 0) {
-      showMsg('export-msg', 'No scan history to export.', 'var(--muted)');
+      showMsg('export-msg', t('no_scan_history'), 'var(--muted)');
       return;
     }
     const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
@@ -382,18 +418,20 @@
   });
 
   document.getElementById('btn-clear-stats')?.addEventListener('click', async () => {
-    if (!confirm('Reset all stats to zero?')) return;
+    const t = NehboroI18n.t;
+    if (!confirm(t('reset_stats_confirm'))) return;
     await msg('NW_CLEAR_STATS');
-    showMsg('export-msg', 'Stats cleared.');
+    showMsg('export-msg', t('stats_cleared'));
     loadStats();
   });
 
   document.getElementById('btn-report-page')?.addEventListener('click', async () => {
+    const t = NehboroI18n.t;
     if (!activeTab?.url) return;
     const btn = document.getElementById('btn-report-page');
-    btn.disabled = true; btn.textContent = '⏳ Sending…';
+    const originalText = btn.textContent;
+    btn.disabled = true; btn.textContent = '⏳ ' + t('sending') + '…';
 
-    // Pull the stored scan so we can include findings + meta.extractedUrls in the report
     let findings = [], score = 0, meta = {};
     try {
       const resp = await msg('NW_GET_SCAN', { hostname: currentHostname });
@@ -411,19 +449,20 @@
       meta,
     });
     if (result?.ok) {
-      showMsg('settings-msg', '✅ Report sent! Auto-deletes in 12h.');
+      showMsg('settings-msg', '✅ ' + t('report_sent'));
     } else if (result?.queued) {
-      showMsg('settings-msg', '📥 Queued - will send when online.', 'var(--accent-yellow)');
+      showMsg('settings-msg', '📥 ' + t('queued'), 'var(--accent-yellow)');
     } else {
-      showMsg('settings-msg', '✅ Reported.', 'var(--accent-green)');
+      showMsg('settings-msg', '✅ ' + t('reported'), 'var(--accent-green)');
     }
-    btn.disabled = false; btn.textContent = '🚩 Report this page';
+    btn.disabled = false; btn.textContent = originalText;
   });
 
   document.getElementById('btn-trust-domain')?.addEventListener('click', async () => {
+    const t = NehboroI18n.t;
     if (!currentHostname) return;
     await msg('NW_WHITELIST_DOMAIN', { domain: currentHostname });
-    showMsg('settings-msg', `✅ ${currentHostname} trusted.`);
+    showMsg('settings-msg', t('domain_trusted').replace('{domain}', currentHostname));
     loadSettings();
   });
 
@@ -432,21 +471,19 @@
   let customScores = {};
 
   async function loadScores() {
+    const t = NehboroI18n.t;
     const container = document.getElementById('score-list');
     const countEl   = document.getElementById('scores-count');
     if (!container) return;
 
-    // Load custom scores from storage
     const stored = await chrome.storage.local.get('nehboro_custom_scores');
     customScores = stored.nehboro_custom_scores || {};
 
-    // Try to get detection list from content script
     try {
       const result = await chrome.tabs.sendMessage(activeTab.id, { type: 'NW_GET_DETECTIONS' });
       if (result?.detections) detectionsList = result.detections;
     } catch {}
 
-    // Fallback: if we couldn't get from content script, use hardcoded list
     if (detectionsList.length === 0) {
       detectionsList = [
         { id:'CLICKFIX_FULL_SEQUENCE', name:'ClickFix Full Sequence', description:'Complete open-paste-execute instruction sequence', defaultScore:45, tags:['clickfix','critical'] },
@@ -544,19 +581,19 @@
         { id:'BONUS_CAPTCHA_INSTRUCTION', name:'Combo: Fake CAPTCHA + Instructions', description:'CAPTCHA lure + execution instructions', defaultScore:15, tags:['combo','critical'] },
         { id:'BONUS_PS_CLIPBOARD', name:'Combo: PowerShell + Clipboard', description:'Clipboard hijack + encoded PowerShell', defaultScore:20, tags:['combo','critical'] },
         { id:'BONUS_CRYPTO_LOOKALIKE', name:'Combo: Crypto + Lookalike', description:'Crypto phishing on lookalike domain', defaultScore:20, tags:['combo','critical'] },
-        { id:'BONUS_SCAM_FULLKIT', name:'Combo: Full Scam Kit', description:'Multiple social engineering signals combined', defaultScore:25, tags:['combo','critical'] },
+        { id:'BONUS_SCAM_FULLKIT', name:'Combo: Full Scam kit', description:'Multiple social engineering signals combined', defaultScore:25, tags:['combo','critical'] },
         { id:'BONUS_VISUAL_PHISH', name:'Combo: Visual Impersonation + Login', description:'Visual brand impersonation + credential harvesting', defaultScore:20, tags:['combo','critical'] },
       ];
     }
 
     renderScores('');
-    if (countEl) countEl.textContent = `${detectionsList.length} detections registered`;
-    // Update header badge
+    if (countEl) countEl.textContent = `${detectionsList.length} ${t('detections_registered')}`;
     const detBadge = document.getElementById('engine-det-count');
     if (detBadge) detBadge.textContent = detectionsList.length;
   }
 
   function renderScores(filter) {
+    const t = NehboroI18n.t;
     const container = document.getElementById('score-list');
     if (!container) return;
     const q = filter.toLowerCase();
@@ -576,13 +613,12 @@
           </div>
           <div class="score-desc">${esc(d.description)}</div>
           <div class="score-tags">
-            ${(d.tags||[]).map(t => `<span class="score-tag ${t === 'critical' ? 'critical' : t === 'combo' ? 'combo' : ''}">${esc(t)}</span>`).join('')}
-            <span class="score-tag">default: ${d.defaultScore}</span>
+            ${(d.tags||[]).map(tg => `<span class="score-tag ${tg === 'critical' ? 'critical' : tg === 'combo' ? 'combo' : ''}">${esc(tg)}</span>`).join('')}
+            <span class="score-tag">${t('default')}: ${d.defaultScore}</span>
           </div>
         </div>`;
     }).join('');
 
-    // Live update on input change
     container.querySelectorAll('.score-input').forEach(input => {
       input.addEventListener('input', () => {
         const id = input.dataset.id;
@@ -604,20 +640,21 @@
   });
 
   document.getElementById('btn-save-scores')?.addEventListener('click', async () => {
+    const t = NehboroI18n.t;
     await chrome.storage.local.set({ nehboro_custom_scores: customScores });
     const count = Object.keys(customScores).length;
-    showMsg('scores-msg', `Saved! ${count} custom score(s) active.`);
+    showMsg('scores-msg', t('saved_count').replace('{count}', count));
   });
 
   document.getElementById('btn-reset-scores')?.addEventListener('click', async () => {
-    if (!confirm('Reset all detection scores to defaults?')) return;
+    const t = NehboroI18n.t;
+    if (!confirm(t('reset_scores_confirm'))) return;
     customScores = {};
     await chrome.storage.local.set({ nehboro_custom_scores: {} });
     renderScores(document.getElementById('scores-search')?.value || '');
-    showMsg('scores-msg', 'All scores reset to defaults.');
+    showMsg('scores-msg', t('all_scores_reset'));
   });
 
-  // ── AI CONFIG (Claude only) ─────────────────────────────
   const DEFAULT_MODEL = 'claude-sonnet-4-20250514';
 
   async function loadAiConfig() {
@@ -631,7 +668,6 @@
     const aiBtn = document.getElementById('btn-ai-scan');
     if (keyEl && cfg.apiKey) keyEl.value = cfg.apiKey;
 
-    // Load model
     const model = cfg.model || DEFAULT_MODEL;
     if (modelEl) {
       const optValues = [...modelEl.options].map(o => o.value);
@@ -650,102 +686,105 @@
     if (aiBtn) aiBtn.style.display = enabled ? '' : 'none';
   }
 
-  // Toggle custom model input visibility
   document.getElementById('ai-model')?.addEventListener('change', (e) => {
     const customEl = document.getElementById('ai-model-custom');
     if (customEl) customEl.style.display = e.target.value === 'custom' ? '' : 'none';
   });
 
   document.getElementById('btn-save-ai')?.addEventListener('click', async () => {
+    const t = NehboroI18n.t;
     const apiKey = document.getElementById('ai-api-key')?.value?.trim() || '';
-    if (!apiKey) { showMsg('ai-config-msg', 'Enter an Anthropic API key.', 'var(--red)'); return; }
+    if (!apiKey) { showMsg('ai-config-msg', t('api_key_required'), 'var(--red)'); return; }
     const modelSel = document.getElementById('ai-model')?.value || DEFAULT_MODEL;
     const model = modelSel === 'custom'
       ? (document.getElementById('ai-model-custom')?.value?.trim() || DEFAULT_MODEL)
       : modelSel;
     await msg('NW_SAVE_AI_CONFIG', { apiKey, model });
-    showMsg('ai-config-msg', `Claude AI enabled (${model}).`);
+    showMsg('ai-config-msg', t('claude_ai_enabled').replace('{model}', model));
     loadAiConfig();
   });
 
   document.getElementById('btn-clear-ai')?.addEventListener('click', async () => {
+    const t = NehboroI18n.t;
     await msg('NW_CLEAR_AI_CONFIG');
-    document.getElementById('ai-api-key').value = '';
-    document.getElementById('ai-model').value = DEFAULT_MODEL;
+    if (document.getElementById('ai-api-key')) document.getElementById('ai-api-key').value = '';
+    if (document.getElementById('ai-model')) document.getElementById('ai-model').value = DEFAULT_MODEL;
     const customEl = document.getElementById('ai-model-custom');
     if (customEl) { customEl.value = ''; customEl.style.display = 'none'; }
-    showMsg('ai-config-msg', 'Claude API key cleared.');
+    showMsg('ai-config-msg', t('claude_api_key_cleared'));
     loadAiConfig();
   });
 
-  // ── AI result display ──────────────────────────────────
   async function loadAiResult() {
     if (!currentHostname) return;
     const result = await msg('NW_GET_AI_RESULT', { hostname: currentHostname });
     const aiData = result?.result;
     const container = document.getElementById('ai-result-section');
+    const t = NehboroI18n.t;
     if (!container) return;
     if (!aiData || aiData.status === 'ERROR') { container.style.display = 'none'; return; }
     container.style.display = 'block';
     const statusColor = aiData.status === 'DANGEROUS' ? 'var(--red)' : aiData.status === 'SUSPICIOUS' ? 'var(--amber)' : 'var(--green)';
     const conf = aiData.confidence ? `${(aiData.confidence * 100).toFixed(0)}%` : '-';
     container.innerHTML = `
-      <div class="section-title"><span class="icon">🤖</span> Claude AI Analysis <span class="line"></span></div>
+      <div class="section-title"><span class="icon">🤖</span> <span data-i18n="claude_ai_analysis">${t('claude_ai_analysis')}</span> <span class="line"></span></div>
       <div class="engine-card" style="border-left:3px solid ${statusColor};">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
           <span style="font-family:var(--mono);font-weight:700;font-size:13px;color:${statusColor};">${esc(aiData.status)}</span>
-          <span style="font-size:10px;color:var(--muted);font-family:var(--mono);">Confidence: ${conf}</span>
+          <span style="font-size:10px;color:var(--muted);font-family:var(--mono);">${t('confidence')}: ${conf}</span>
         </div>
-        ${aiData.threat && aiData.threat !== 'NONE' ? `<div style="font-size:10px;color:var(--amber);font-family:var(--mono);margin-bottom:4px;">Threat: ${esc(aiData.threat)}</div>` : ''}
+        ${aiData.threat && aiData.threat !== 'NONE' ? `<div style="font-size:10px;color:var(--amber);font-family:var(--mono);margin-bottom:4px;">${t('threat')}: ${esc(aiData.threat)}</div>` : ''}
         <div style="font-size:11px;color:var(--muted);line-height:1.5;">${esc(aiData.explanation || '')}</div>
       </div>`;
   }
 
-  // ── Scan button (heuristic only) ───────────────────────
   document.getElementById('btn-manual-scan')?.addEventListener('click', async () => {
+    const t = NehboroI18n.t;
     if (!activeTab?.id) return;
     const btn = document.getElementById('btn-manual-scan');
-    btn.disabled = true; btn.textContent = '⟳ Scanning...';
+    const originalText = btn.textContent;
+    btn.disabled = true; btn.textContent = '⟳ ' + t('scanning');
     try {
       const result = await msg('NW_FORCE_SCAN', { tabId: activeTab.id });
       if (result?.error === 'restricted') {
-        showMsg('scan-msg', 'Cannot scan this page (restricted).', 'var(--red)');
+        showMsg('scan-msg', t('cannot_scan_restricted'), 'var(--red)');
       } else if (result?.error) {
-        showMsg('scan-msg', 'Scan failed - reload and retry.', 'var(--red)');
+        showMsg('scan-msg', t('scan_failed'), 'var(--red)');
       } else if (result?.findings?.length) {
-        showMsg('scan-msg', `Score: ${result.score} - ${result.findings.length} detection(s).`);
+        showMsg('scan-msg', `${t('threat_score')}: ${result.score} - ${result.findings.length} ${t('detections_count')}.`);
         await loadStatus();
       } else {
-        showMsg('scan-msg', 'No threats found.');
+        showMsg('scan-msg', t('no_threats_found'));
         await loadStatus();
       }
     } catch {
-      showMsg('scan-msg', 'Cannot scan this page.', 'var(--red)');
+      showMsg('scan-msg', t('cannot_scan'), 'var(--red)');
     }
-    btn.disabled = false; btn.textContent = '⟳ Scan';
+    btn.disabled = false; btn.textContent = originalText;
   });
 
-  // ── AI Scan button (heuristic + Claude) ────────────────
   document.getElementById('btn-ai-scan')?.addEventListener('click', async () => {
+    const t = NehboroI18n.t;
     if (!activeTab?.id || !currentHostname) return;
     const btn = document.getElementById('btn-ai-scan');
     const scanBtn = document.getElementById('btn-manual-scan');
-    btn.disabled = true; btn.textContent = '⟳ Scanning...';
+    const originalText = btn.textContent;
+    btn.disabled = true; btn.textContent = '⟳ ' + t('scanning');
     if (scanBtn) scanBtn.disabled = true;
 
     try {
       const result = await msg('NW_FORCE_SCAN', { tabId: activeTab.id });
       if (result?.error === 'restricted') {
-        showMsg('scan-msg', 'Cannot scan this page (restricted).', 'var(--red)');
-        btn.disabled = false; btn.textContent = '🤖 Scan with AI';
+        showMsg('scan-msg', t('cannot_scan_restricted'), 'var(--red)');
+        btn.disabled = false; btn.textContent = originalText;
         if (scanBtn) scanBtn.disabled = false;
         return;
       }
-      if (result?.findings?.length) showMsg('scan-msg', `Heuristic: ${result.score} pts, ${result.findings.length} hit(s)`);
+      if (result?.findings?.length) showMsg('scan-msg', `${t('heuristic_engine')}: ${result.score} pts, ${result.findings.length} hit(s)`);
       await loadStatus();
     } catch {}
 
-    btn.textContent = '🤖 Claude analyzing...';
+    btn.textContent = '🤖 ' + t('claude_analyzing');
     try {
       const aiResult = await msg('NW_AI_SCAN', { tabId: activeTab.id, url: activeTab.url, hostname: currentHostname });
       if (aiResult?.error) {
@@ -753,21 +792,19 @@
       } else if (aiResult?.result) {
         const st = aiResult.result.status;
         const color = st === 'DANGEROUS' ? 'var(--red)' : st === 'SUSPICIOUS' ? 'var(--amber)' : 'var(--green)';
-        showMsg('scan-msg', `Claude verdict: ${st}`, color);
+        showMsg('scan-msg', t('ai_verdict').replace('{verdict}', st), color);
       }
       await loadAiResult();
     } catch {
-      showMsg('scan-msg', 'AI analysis failed.', 'var(--red)');
+      showMsg('scan-msg', t('ai_failed'), 'var(--red)');
     }
-    btn.disabled = false; btn.textContent = '🤖 Scan with AI';
+    btn.disabled = false; btn.textContent = originalText;
     if (scanBtn) scanBtn.disabled = false;
   });
 
-  // ── Listen for real-time AI result updates ──────────────
   chrome.runtime.onMessage.addListener((request) => {
     if (request.type === 'NW_AI_RESULT' && request.hostname === currentHostname) loadAiResult();
   });
 
-  // ── Initial load ─────────────────────────────────────────
   await Promise.all([loadStatus(), loadFeeds(), loadScores(), loadStats(), loadSettings(), loadAiConfig(), loadAiResult()]);
 })();

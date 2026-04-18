@@ -1,16 +1,40 @@
 // ============================================================
 // Nehboro - blocked/blocked.js
-// Enhanced: close-tab safety, full evidence, animated report
+// Enhanced: close-tab safety, full evidence, animated report, localization
 // ============================================================
 
-(function () {
+(async function () {
   'use strict';
+
+  // ── I18n initialization ─────────────────────────────────────
+  const storage = await chrome.storage.local.get('nehboro_lang');
+  const savedLang = storage.nehboro_lang || chrome.i18n.getUILanguage().split('-')[0];
+  NehboroI18n.init(savedLang);
+
+  function applyTranslations() {
+    const t = NehboroI18n.t;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const val = t(key);
+      if (val !== key) {
+        if (el.childNodes.length <= 1) {
+          el.textContent = val;
+        } else {
+          const textNode = [...el.childNodes].find(n => n.nodeType === 3);
+          if (textNode) textNode.textContent = val;
+        }
+      }
+    });
+  }
+
+  applyTranslations();
 
   const params     = new URLSearchParams(window.location.search);
   const blockedUrl = params.get('url') || params.get('blocked') || '';
   const scoreParam = parseInt(params.get('score') || '0', 10);
   const reasonsRaw = params.get('reasons') || '';
   const reasonSingle = params.get('reason') || '';
+  const t = NehboroI18n.t;
 
   function esc(s) {
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -19,7 +43,7 @@
 
   // ── Populate URL ────────────────────────────────────────
   const urlEl = document.getElementById('blocked-url');
-  if (urlEl) urlEl.textContent = blockedUrl || document.referrer || 'URL not available';
+  if (urlEl) urlEl.textContent = blockedUrl || document.referrer || t('url_not_available');
 
   // ── Load full findings from storage ─────────────────────
   chrome.storage.local.get(['nehboro_block_details', 'nehboro_thresholds'], (data) => {
@@ -42,7 +66,10 @@
       let hostname = '';
       try { hostname = new URL(blockedUrl).hostname; } catch {}
       if (hostname) {
-        descEl.textContent = `${hostname} was flagged with a threat score of ${score > 0 ? score : '100+'} - above the block threshold of ${blockAt}. This strongly indicates phishing, scam, or malware delivery.`;
+        descEl.textContent = t('threat_description_dynamic')
+          .replace('{hostname}', hostname)
+          .replace('{score}', score > 0 ? score : '100+')
+          .replace('{threshold}', blockAt);
       }
     }
 
@@ -54,7 +81,8 @@
       document.getElementById('score-threshold').textContent = blockAt;
       setTimeout(() => {
         const pct = Math.min((score / Math.max(score, blockAt * 1.5)) * 100, 100);
-        document.getElementById('score-fill').style.width = pct + '%';
+        const fill = document.getElementById('score-fill');
+        if (fill) fill.style.width = pct + '%';
       }, 200);
     }
 
@@ -90,7 +118,7 @@
     if (!section || !list) return;
 
     section.style.display = 'block';
-    titleEl.textContent = `Detections (${findings.length})`;
+    titleEl.textContent = `${t('detections')} (${findings.length})`;
 
     const sorted = [...findings].sort((a, b) => (b.score || 0) - (a.score || 0));
 
@@ -117,7 +145,7 @@
             ${cat ? `<div style="font-size:10px;color:#555;font-family:monospace;margin-bottom:4px;">${cat}</div>` : ''}
             <div class="detail-desc">${desc}</div>
             ${ev ? `
-              <div class="detail-evidence-label">Matched content</div>
+              <div class="detail-evidence-label">${t('matched_content')}</div>
               <div class="detail-evidence">${esc(ev)}</div>
             ` : ''}
             ${tags ? `<div class="detail-tags">${tags}</div>` : ''}
@@ -143,7 +171,7 @@
       allOpen = !allOpen;
       list.querySelectorAll('.detection-detail').forEach(d => d.classList.toggle('open', allOpen));
       list.querySelectorAll('.detection-arrow').forEach(a => a.textContent = allOpen ? '▼' : '▶');
-      document.getElementById('detections-toggle').textContent = allOpen ? '▲ Collapse all' : '▼ Expand all';
+      document.getElementById('detections-toggle').textContent = allOpen ? '▲ ' + t('collapse_all') : '▼ ' + t('expand_all');
     });
   }
 
@@ -161,7 +189,7 @@
   document.getElementById('btn-report')?.addEventListener('click', function () {
     const btn = this;
     if (btn.classList.contains('sent')) return;
-    btn.innerHTML = '<span class="btn-icon">⏳</span> Sending…';
+    btn.innerHTML = `<span class="btn-icon">⏳</span> ${t('sending')}…`;
     btn.style.opacity = '0.7';
 
     chrome.runtime.sendMessage({
@@ -174,11 +202,11 @@
       btn.style.opacity = '1';
       btn.classList.add('sent');
       if (resp && resp.ok) {
-        btn.innerHTML = '<span class="btn-icon check-anim">✓</span> Report Sent';
+        btn.innerHTML = `<span class="btn-icon check-anim">✓</span> ${t('report_sent')}`;
       } else if (resp && resp.queued) {
-        btn.innerHTML = '<span class="btn-icon">📥</span> Queued (offline)';
+        btn.innerHTML = `<span class="btn-icon">📥</span> ${t('queued')}`;
       } else {
-        btn.innerHTML = '<span class="btn-icon check-anim">✓</span> Reported';
+        btn.innerHTML = `<span class="btn-icon check-anim">✓</span> ${t('reported')}`;
       }
     });
   });
@@ -191,9 +219,9 @@
 
   document.getElementById('btn-proceed-confirm')?.addEventListener('click', function () {
     const btn = this;
-    btn.textContent = '⏳ Registering exception…'; btn.disabled = true;
+    btn.textContent = `⏳ ${t('registering_exception')}…`; btn.disabled = true;
     const target = (blockedUrl && blockedUrl.startsWith('http')) ? blockedUrl : (document.referrer || null);
-    if (!target) { btn.textContent = 'No URL to proceed to'; return; }
+    if (!target) { btn.textContent = t('no_url_to_proceed'); return; }
     let hostname = '';
     try { hostname = new URL(target).hostname; } catch {}
     chrome.runtime.sendMessage({ type: 'NW_BYPASS_URL', hostname, url: target }, (resp) => {

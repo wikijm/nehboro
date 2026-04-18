@@ -132,11 +132,22 @@ note: a huge list of bad AS IP range, urlhaus clickfix reports, some ports, and 
 
 ## Languages
 
-Scam detection patterns cover:
+Nehboro is **fully multilingual** (currently English and French).
 
-🇬🇧 English · 🇫🇷 French · 🇪🇸 Spanish · 🇩🇪 German · 🇮🇹 Italian · 🇧🇷 Portuguese
+- **Automatic:** The extension automatically detects your browser language.
+- **Configurable:** You can manually switch languages in the **Config** tab.
+- **Scam Detection:** Our heuristic patterns cover: 🇬🇧 English · 🇫🇷 French · 🇪🇸 Spanish · 🇩🇪 German · 🇮🇹 Italian · 🇧🇷 Portuguese.
 
-Catches regional ClickFix campaigns like *"Copiar solución"*, *"Para provar que não é um robô"*, *"Fenêtre du terminal"* that English-only tools miss entirely.
+> [!TIP]
+> Community translations are more than welcome! If you'd like to help localize Nehboro to your language, please open a PR.
+
+---
+
+## CI/CD
+
+Nehboro uses GitHub Actions to ensure code quality and provide automated builds:
+- **Linting:** Every code change is automatically checked for errors and adherence to extension best practices using `web-ext lint`.
+- **Automated Builds:** The extension is compiled and packaged into a ZIP file on every push to the main branch, available as a workflow artifact.
 
 ---
 
